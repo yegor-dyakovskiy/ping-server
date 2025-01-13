@@ -1,28 +1,51 @@
-import http from 'http';
-import https from 'https';
+const http = require('http');
+const url = require('url');
 
-const URL = 'https://promalp-lead-server.onrender.com';
+// Функция для обработки запросов
+const requestHandler = (req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const method = req.method;
+    const pathname = parsedUrl.pathname;
 
-const pingServer = () => {
-    https.get(URL, (res) => {
-        console.log(`Пинг отправлен на ${URL}. Статус ответа: ${res.statusCode}`);
-    }).on('error', (e) => {
-        console.error(`Ошибка при отправке пинга: ${e.message}`);
-    });
+    res.setHeader('Content-Type', 'application/json');
+
+    // 1. Главная страница
+    if (pathname === '/' && method === 'GET') {
+        res.writeHead(200);
+        res.end(JSON.stringify({ message: 'Добро пожаловать на сервер!' }));
+    }
+    // 2. Получение списка пользователей
+    else if (pathname === '/users' && method === 'GET') {
+        const users = [
+            { id: 1, name: 'Егор' },
+            { id: 2, name: 'Иван' },
+            { id: 3, name: 'Анна' },
+        ];
+        res.writeHead(200);
+        res.end(JSON.stringify(users));
+    }
+    // 3. Получение информации о пользователе по ID
+    else if (pathname.startsWith('/users/') && method === 'GET') {
+        const id = pathname.split('/')[2];
+        if (id) {
+            res.writeHead(200);
+            res.end(JSON.stringify({ id, name: `Пользователь ${id}` }));
+        } else {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: 'ID пользователя не указан' }));
+        }
+    }
+    // 5. Страница 404 для любых других маршрутов
+    else {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: 'Ресурс не найден' }));
+    }
 };
 
-// Отправлять запрос каждую минуту
-setInterval(pingServer, 60000);
+// Создание сервера
+const server = http.createServer(requestHandler);
 
-console.log('Сервер для пинга запущен. Пингую каждый 1 минуту...');
-
-// Фиктивный сервер
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('This is a dummy server for Render compatibility.');
-});
-
-const PORT = process.env.PORT;
-server.listen(PORT, () => {
-    console.log(`Фиктивный сервер запущен на порту ${PORT}`);
+// Запуск сервера на порту 3000
+server.listen(3000, () => {
+    console.log('Сервер запущен на http://localhost:3000');
 });
